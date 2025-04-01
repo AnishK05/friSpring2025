@@ -1,0 +1,7 @@
+Robomimic Get Started Colab: https://colab.research.google.com/drive/1b62r_km9pP40fKF0cBdpdTO2P_2eIbC6?usp=sharing#scrollTo=T1aZtB-M2DhV
+
+Robomimic Github: https://github.com/ARISE-Initiative/robomimic?tab=readme-ov-file
+
+Diffusion Policy Colab: https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B?usp=sharing#scrollTo=L5E-nR6ornyg
+
+Diffusion Policy Website: https://diffusion-policy.cs.columbia.edu/
