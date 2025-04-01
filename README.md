@@ -2,6 +2,6 @@
 
 Let's get cooking guys
 
-make your own branches and put stuff on there
+I made branches for yall, put your stuff on there
 
 lebron james
