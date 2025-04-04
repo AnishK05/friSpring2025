@@ -10,7 +10,7 @@ lebron james
 
 python -m venv fri-env
 
-## Activate the virtual environment
+## Activate the virtual environment (Windows version)
 
 .\fri-env\Scripts\activate
 

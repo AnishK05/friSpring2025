@@ -1,0 +1,15 @@
+-- Notes Log --
+
+I was able to set-up the virtual environment and I added the .gitignore. Everything should be set-up for that.
+
+I talked to Dr. A and he said that setting up Diffusion Policy from scratch is pointless, because our TA Arnav already made a wrapper around it for standard gripper. So basically I just wasted my time today lol.
+
+We can either use Arnav's wrapper or we can use Robomimic, which according to Dr. A works out of the box and is way easier to hook-up with Sawyer and such.
+
+So, we can either take a few steps:
+
+    1. Since we already have the environment set-up for Diffusion Policy, we can continue with that and just adopt Arnav's wrapper instead of dealing with setting up on our own.
+    2. Just switch to Robomimic.
+    3. Test both?
+
+Let's discuss, let me know what works best
