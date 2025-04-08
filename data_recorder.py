@@ -31,6 +31,7 @@ class RealSenseCamera:
         color_frame = frames.get_color_frame()
         color_image = np.asanyarray(color_frame.get_data())
         color_image_rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
+        # Meow
         # depth
         depth_frame = frames.get_depth_frame()
         depth_image = np.asanyarray(depth_frame.get_data())
@@ -61,6 +62,7 @@ class Recorder:
         self.dt = np.dtype([
             ('position', np.float32, (3,)),
             ('orientation', np.float32, (4,)),
+            # Meow
             ('force', np.float32, (3,)),
             ('torque', np.float32, (3,))
         ])
@@ -84,6 +86,8 @@ class Recorder:
         # demo_group.create_dataset("states", (0,), maxshape=(None,), dtype=self.dt)
         # demo_group.create_dataset("actions", (0,), maxshape=(None,), dtype=self.dt)
         # demo_group.create_dataset("observations", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
+
+        # Meow
 
         demo_group.create_dataset("obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
         demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
@@ -124,10 +128,12 @@ class Recorder:
             endpoint_pose = self.limb.endpoint_pose()
             position = endpoint_pose["position"]
             orientation = endpoint_pose["orientation"]
+            # Meow
             force = self.limb.endpoint_effort()['force'] # TODO: I pray this is how it's formatted
             torque = self.limb.endpoint_effort()['torque']
 
             timestamps = self.demo_group["timestamps"]
+            # Meow
             states = self.demo_group["obs/states"]
             actions = self.demo_group["actions"]
             colors = self.demo_group["obs/colors"]
@@ -137,9 +143,11 @@ class Recorder:
             states.resize((self.sample_count + 1,))
             actions.resize((self.sample_count + 1,))
             colors.resize((self.sample_count + 1, IMG_Y, IMG_X, 3))
+            # Meow
             depths.resize((self.sample_count + 1, IMG_Y, IMG_X, 1)) # TODO: should it be 1 or 3?
 
             timestamps[self.sample_count] = timestamp_time
+            # Meow
             states[self.sample_count] = (position, orientation, force, torque)
             if self.prev_state is None:  # The first action should just be the first state
                 actions[self.sample_count] = (position, orientation, force)
@@ -167,6 +175,7 @@ class Recorder:
                 delta_orientation = intera_interface.Limb.Quaternion(delta_x, delta_y, delta_z, delta_w)
                 actions[self.sample_count] = (delta_position, delta_orientation)
             self.prev_state = endpoint_pose
+            # Meow
             color, depth = self.camera.get_frame()
             colors[self.sample_count] = color
             depths[self.sample_count] = depth
@@ -183,10 +192,12 @@ class Recorder:
             print(f"\tTimestamp: {timestamp_time:.2f}")
             print(f"\tPosition: {position}")
             print(f"\tOrientation: {orientation}")
+            # Meow
             print(f"\tForce: {force}")
             print(f"\tTorque: {torque}")
             print(f"\tAction: {actions[self.sample_count]}")
             print(f"\Color shape: {color.shape}\n")
+            # Meow
             print(f"\Depth shape: {depth.shape}\n")
             self.sample_count += 1
 
