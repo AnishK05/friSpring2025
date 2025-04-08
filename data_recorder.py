@@ -123,7 +123,7 @@ class Recorder:
             endpoint_pose = self.limb.endpoint_pose()
             position = endpoint_pose["position"]
             orientation = endpoint_pose["orientation"]
-            force = endpoint_pose["force"] # TODO: is this how it's formatted??
+            force = self.limb.endpoint_effort()['force'] # TODO: I pray this is how it's formatted
 
             timestamps = self.demo_group["timestamps"]
             states = self.demo_group["obs/states"]
