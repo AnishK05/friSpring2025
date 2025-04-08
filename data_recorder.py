@@ -61,7 +61,8 @@ class Recorder:
         self.dt = np.dtype([
             ('position', np.float32, (3,)),
             ('orientation', np.float32, (4,)),
-            ('force', np.float32, (1,)) # TODO: adjust to actual force format
+            ('force', np.float32, (3,)),
+            ('torque', np.float32, (3,))
         ])
 
         # Demonstration recording initialization
@@ -84,8 +85,8 @@ class Recorder:
         # demo_group.create_dataset("actions", (0,), maxshape=(None,), dtype=self.dt)
         # demo_group.create_dataset("observations", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
 
-        demo_group.create_dataset("obs/colors", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
-        demo_group.create_dataset("obs/depths", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
+        demo_group.create_dataset("obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
+        demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
         demo_group.create_dataset("obs/states", (0,), maxshape=(None,), dtype=self.dt)
         demo_group.create_dataset("actions", (0,), maxshape=(None,), dtype=self.dt)
 
@@ -124,6 +125,7 @@ class Recorder:
             position = endpoint_pose["position"]
             orientation = endpoint_pose["orientation"]
             force = self.limb.endpoint_effort()['force'] # TODO: I pray this is how it's formatted
+            torque = self.limb.endpoint_effort()['torque']
 
             timestamps = self.demo_group["timestamps"]
             states = self.demo_group["obs/states"]
@@ -138,7 +140,7 @@ class Recorder:
             depths.resize((self.sample_count + 1, IMG_Y, IMG_X, 1)) # TODO: should it be 1 or 3?
 
             timestamps[self.sample_count] = timestamp_time
-            states[self.sample_count] = (position, orientation, force)
+            states[self.sample_count] = (position, orientation, force, torque)
             if self.prev_state is None:  # The first action should just be the first state
                 actions[self.sample_count] = (position, orientation, force)
             else:
@@ -182,6 +184,7 @@ class Recorder:
             print(f"\tPosition: {position}")
             print(f"\tOrientation: {orientation}")
             print(f"\tForce: {force}")
+            print(f"\tTorque: {torque}")
             print(f"\tAction: {actions[self.sample_count]}")
             print(f"\Color shape: {color.shape}\n")
             print(f"\Depth shape: {depth.shape}\n")
