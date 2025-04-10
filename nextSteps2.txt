@@ -1,0 +1,6 @@
+robomimic successfully works on linux
+
+get the hdf5 sample datasets from robomimic library and then copy + paste them into 
+the fri directory
+
+Next time we can start using Varun code

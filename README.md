@@ -14,6 +14,8 @@ python -m venv fri-env
 
 .\fri-env\Scripts\activate
 
+source fri-env/bin/activate
+
 ## Install requirements
 
 pip install -r requirements.txt
