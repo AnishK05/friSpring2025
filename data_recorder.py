@@ -150,7 +150,7 @@ class Recorder:
             # Meow
             states[self.sample_count] = (position, orientation, force, torque)
             if self.prev_state is None:  # The first action should just be the first state
-                actions[self.sample_count] = (position, orientation, force)
+                actions[self.sample_count] = (position, orientation, force, torque)
             else:
                 curr_x, curr_y, curr_z = endpoint_pose["position"]
                 prev_x, prev_y, prev_z = self.prev_state["position"]
