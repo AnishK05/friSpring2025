@@ -23,6 +23,7 @@ class RealSenseCamera:
         self.pipeline = rs.pipeline()
         self.config = rs.config()
         self.config.enable_stream(rs.stream.color, IMG_X, IMG_Y, rs.format.bgr8, 30)
+        self.config.enable_stream(rs.stream.depth, IMG_X, IMG_Y, rs.format.z16, 30)
         self.pipeline.start(self.config)
 
     def get_frame(self):
