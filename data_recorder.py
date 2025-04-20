@@ -136,8 +136,8 @@ class Recorder:
             # Meow
             states = self.demo_group["obs/states"]
             actions = self.demo_group["actions"]
-            colors = self.demo_group["obs/colors"]
-            depths = self.demo_group["obs/depths"]
+            colors = self.demo_group["obs/color"]
+            depths = self.demo_group["obs/depth"]
 
             timestamps.resize((self.sample_count + 1,))
             states.resize((self.sample_count + 1,))
