@@ -91,7 +91,7 @@ class Recorder:
         # Meow
 
         demo_group.create_dataset("obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
-        demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
+        demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X), maxshape=(None, IMG_Y, IMG_X), dtype='uint16')
         demo_group.create_dataset("obs/states", (0,), maxshape=(None,), dtype=self.dt)
         demo_group.create_dataset("actions", (0,), maxshape=(None,), dtype=self.dt)
 
@@ -145,7 +145,7 @@ class Recorder:
             actions.resize((self.sample_count + 1,))
             colors.resize((self.sample_count + 1, IMG_Y, IMG_X, 3))
             # Meow
-            depths.resize((self.sample_count + 1, IMG_Y, IMG_X, 1)) # TODO: should it be 1 or 3?
+            depths.resize((self.sample_count + 1, IMG_Y, IMG_X))
 
             timestamps[self.sample_count] = timestamp_time
             # Meow
