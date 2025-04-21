@@ -163,7 +163,7 @@ class Recorder:
                 delta_z = prev_conj_w * curr_z + prev_conj_x * curr_y - prev_conj_y * curr_x + prev_conj_z * curr_w
 
                 delta_orientation = intera_interface.Limb.Quaternion(delta_x, delta_y, delta_z, delta_w)
-                actions[self.sample_count] = (delta_position, delta_orientation, force torque) # TODO: if we're using this it should really be delta force and torque
+                actions[self.sample_count] = (delta_position, delta_orientation, force, torque) # TODO: if we're using this it should really be delta force and torque
             self.prev_state = {**endpoint_pose, **endpoint_effort}
             color, depth = self.camera.get_frame()
             colors[self.sample_count] = color
