@@ -126,7 +126,7 @@ class Recorder:
             endpoint_pose = self.limb.endpoint_pose()
             position = endpoint_pose["position"]
             orientation = endpoint_pose["orientation"]
-            iq = int(self.bariflex_msg.split("Iq:")[1])
+            iq = np.float32(self.bariflex_msg.data.split("Iq:")[1])
 
             timestamps = self.demo_group["timestamps"]
             states = self.demo_group["obs/states"]
