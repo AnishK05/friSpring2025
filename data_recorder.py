@@ -10,6 +10,7 @@ import pyrealsense2 as rs
 import rospy
 from matplotlib import pyplot as plt
 from pynput import keyboard
+from std_msgs.msg import String
 
 IMG_X = 640  # Camera observation width
 IMG_Y = 480  # Camera observation height
@@ -57,13 +58,14 @@ class Recorder:
 
         self.limb = intera_interface.Limb(side)
         self.camera = camera
+        rospy.Subscriber("/bariflex", String, self.bariflex_callback)
+        self.bariflex_msg = None
 
         # Custom datatype for storing intera_interface.Limb().endpoint_pose() in a HDF5 dataset
         self.dt = np.dtype([
             ('position', np.float32, (3,)),
             ('orientation', np.float32, (4,)),
-            ('force', np.float32, (3,)),
-            ('torque', np.float32, (3,))
+            ('iq', np.float32, (1,))
         ])
 
         # Demonstration recording initialization
@@ -73,6 +75,9 @@ class Recorder:
         self.demo_group = None
         self.prev_state = None
         self.record_thread = None
+
+    def bariflex_callback(self, msg):
+        self.bariflex_msg = msg
 
     def setup_group(self, demo_num: int, description: str):
         """Create an HDF5 group for storing timestamps, states, actions, and observations for a given demonstration."""
@@ -119,11 +124,9 @@ class Recorder:
         if self.recording and not rospy.is_shutdown():
             timestamp_time = time.time() - self.demo_group.attrs["start_time"]
             endpoint_pose = self.limb.endpoint_pose()
-            endpoint_effort = self.limb.endpoint_effort()
             position = endpoint_pose["position"]
             orientation = endpoint_pose["orientation"]
-            force = endpoint_effort['force'] # TODO: I think this is not the force and torque we need
-            torque = endpoint_effort['torque']
+            iq = int(self.bariflex_msg.split("Iq:")[1])
 
             timestamps = self.demo_group["timestamps"]
             states = self.demo_group["obs/states"]
@@ -138,9 +141,9 @@ class Recorder:
             depths.resize((self.sample_count + 1, IMG_Y, IMG_X))
 
             timestamps[self.sample_count] = timestamp_time
-            states[self.sample_count] = (position, orientation, force, torque)
+            states[self.sample_count] = (position, orientation, iq)
             if self.prev_state is None:  # The first action should just be the first state
-                actions[self.sample_count] = (position, orientation, force, torque)
+                actions[self.sample_count] = (position, orientation, iq)
             else:
                 curr_x, curr_y, curr_z = endpoint_pose["position"]
                 prev_x, prev_y, prev_z = self.prev_state["position"]
@@ -163,8 +166,10 @@ class Recorder:
                 delta_z = prev_conj_w * curr_z + prev_conj_x * curr_y - prev_conj_y * curr_x + prev_conj_z * curr_w
 
                 delta_orientation = intera_interface.Limb.Quaternion(delta_x, delta_y, delta_z, delta_w)
-                actions[self.sample_count] = (delta_position, delta_orientation, force, torque) # TODO: if we're using this it should really be delta force and torque
-            self.prev_state = {**endpoint_pose, **endpoint_effort}
+                delta_iq = iq - self.prev_state["iq"]
+                actions[self.sample_count] = (delta_position, delta_orientation, delta_iq)
+            endpoint_pose["iq"] = iq
+            self.prev_state = endpoint_pose
             color, depth = self.camera.get_frame()
             colors[self.sample_count] = color
             depths[self.sample_count] = depth
@@ -181,8 +186,7 @@ class Recorder:
             print(f"\tTimestamp: {timestamp_time:.2f}")
             print(f"\tPosition: {position}")
             print(f"\tOrientation: {orientation}")
-            print(f"\tForce: {force}")
-            print(f"\tTorque: {torque}")
+            print(f"\tIq: {iq}")
             print(f"\tAction: {actions[self.sample_count]}")
             print(f"\Color shape: {color.shape}\n")
             print(f"\Depth shape: {depth.shape}\n")
