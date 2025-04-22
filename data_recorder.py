@@ -62,11 +62,11 @@ class Recorder:
         self.bariflex_msg = None
 
         # Custom datatype for storing intera_interface.Limb().endpoint_pose() in a HDF5 dataset
-        self.dt = np.dtype([
-            ('position', np.float32, (3,)),
-            ('orientation', np.float32, (4,)),
-            ('iq', np.float32, (1,))
-        ])
+        # self.dt = np.dtype([
+        #     ('position', np.float32, (3,)),
+        #     ('orientation', np.float32, (4,)),
+        #     ('iq', np.float32, (1,))
+        # ])
 
         # Demonstration recording initialization
         self.demo_num = 0
@@ -88,9 +88,9 @@ class Recorder:
         # Datasets start with 0 elements but will be resized when storing data
         demo_group.create_dataset("timestamps", (0,), maxshape=(None,), dtype="float32")
         demo_group.create_dataset("obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
-        demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X), maxshape=(None, IMG_Y, IMG_X), dtype='uint16')
-        demo_group.create_dataset("obs/states", (0, 8), maxshape=(None,), dtype=self.dt)
-        demo_group.create_dataset("actions", (0, 8), maxshape=(None,), dtype=self.dt)
+        demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X, 1), maxshape=(None, IMG_Y, IMG_X, 1), dtype='uint16')
+        demo_group.create_dataset("obs/states", (0, 8), maxshape=(None, 8), dtype='float32')
+        demo_group.create_dataset("actions", (0, 8), maxshape=(None, 8), dtype='float32')
 
         self.demo_group = demo_group
 
@@ -135,15 +135,15 @@ class Recorder:
             depths = self.demo_group["obs/depth"]
 
             timestamps.resize((self.sample_count + 1,))
-            states.resize((self.sample_count + 1,))
-            actions.resize((self.sample_count + 1,))
+            states.resize((self.sample_count + 1, 8))
+            actions.resize((self.sample_count + 1, 8))
             colors.resize((self.sample_count + 1, IMG_Y, IMG_X, 3))
-            depths.resize((self.sample_count + 1, IMG_Y, IMG_X))
+            depths.resize((self.sample_count + 1, IMG_Y, IMG_X, 1))
 
             timestamps[self.sample_count] = timestamp_time
-            states[self.sample_count] = (position, orientation, iq)
+            states[self.sample_count] = np.concatenate([np.array(position), np.array(orientation), [iq]])
             if self.prev_state is None:  # The first action should just be the first state
-                actions[self.sample_count] = (position, orientation, iq)
+                actions[self.sample_count] = np.concatenate([np.array(position), np.array(orientation), [iq]])
             else:
                 curr_x, curr_y, curr_z = endpoint_pose["position"]
                 prev_x, prev_y, prev_z = self.prev_state["position"]
@@ -167,12 +167,12 @@ class Recorder:
 
                 delta_orientation = intera_interface.Limb.Quaternion(delta_x, delta_y, delta_z, delta_w)
                 delta_iq = iq - self.prev_state["iq"]
-                actions[self.sample_count] = (delta_position, delta_orientation, delta_iq)
+                actions[self.sample_count] = np.concatenate([np.array(delta_position), np.array(delta_orientation), [delta_iq]])
             endpoint_pose["iq"] = iq
             self.prev_state = endpoint_pose
             color, depth = self.camera.get_frame()
             colors[self.sample_count] = color
-            depths[self.sample_count] = depth
+            depths[self.sample_count] = depth[:, :, np.newaxis]
             if self.store_observations:
                 if not os.path.exists(f"{self.filename}/demo_{self.demo_num}"):
                     os.mkdir(f"{self.filename}/demo_{self.demo_num}/")
