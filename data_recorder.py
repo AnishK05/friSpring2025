@@ -86,11 +86,11 @@ class Recorder:
         demo_group.attrs["num_samples"] = 0
 
         # Datasets start with 0 elements but will be resized when storing data
-        demo_group.create_dataset("timestamps", (0,), maxshape=(None,), dtype="float32")
-        demo_group.create_dataset("obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
-        demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X), maxshape=(None, IMG_Y, IMG_X), dtype='uint16')
-        demo_group.create_dataset("obs/states", (0,), maxshape=(None,), dtype=self.dt)
-        demo_group.create_dataset("actions", (0,), maxshape=(None,), dtype=self.dt)
+        demo_group.create_dataset("data/timestamps", (0,), maxshape=(None,), dtype="float32")
+        demo_group.create_dataset("data/obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
+        demo_group.create_dataset("data/obs/depth", (0, IMG_Y, IMG_X), maxshape=(None, IMG_Y, IMG_X), dtype='uint16')
+        demo_group.create_dataset("data/obs/states", (0,), maxshape=(None,), dtype=self.dt)
+        demo_group.create_dataset("data/actions", (0,), maxshape=(None,), dtype=self.dt)
 
         self.demo_group = demo_group
 
@@ -128,11 +128,11 @@ class Recorder:
             orientation = endpoint_pose["orientation"]
             iq = np.float32(self.bariflex_msg.data.split("Iq:")[1])
 
-            timestamps = self.demo_group["timestamps"]
-            states = self.demo_group["obs/states"]
-            actions = self.demo_group["actions"]
-            colors = self.demo_group["obs/color"]
-            depths = self.demo_group["obs/depth"]
+            timestamps = self.demo_group["data/timestamps"]
+            states = self.demo_group["data/obs/states"]
+            actions = self.demo_group["data/actions"]
+            colors = self.demo_group["data/obs/color"]
+            depths = self.demo_group["data/obs/depth"]
 
             timestamps.resize((self.sample_count + 1,))
             states.resize((self.sample_count + 1,))
