@@ -89,8 +89,8 @@ class Recorder:
         demo_group.create_dataset("timestamps", (0,), maxshape=(None,), dtype="float32")
         demo_group.create_dataset("obs/color", (0, IMG_Y, IMG_X, 3), maxshape=(None, IMG_Y, IMG_X, 3), dtype='uint8')
         demo_group.create_dataset("obs/depth", (0, IMG_Y, IMG_X), maxshape=(None, IMG_Y, IMG_X), dtype='uint16')
-        demo_group.create_dataset("obs/states", (0,), maxshape=(None,), dtype=self.dt)
-        demo_group.create_dataset("actions", (0,), maxshape=(None,), dtype=self.dt)
+        demo_group.create_dataset("obs/states", (0, 8), maxshape=(None,), dtype=self.dt)
+        demo_group.create_dataset("actions", (0, 8), maxshape=(None,), dtype=self.dt)
 
         self.demo_group = demo_group
 
