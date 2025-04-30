@@ -31,7 +31,9 @@ class Trainer():
                  demonstrations,
                  pose_stats,
                  orientation_stats,
-                 img_stats=None
+                 iq_stats,
+                 color_stats=None,
+                 depth_stats=None
                 #  demonstrations, 
                 #  obs_horizon, 
                 #  pred_horizon, 
@@ -51,7 +53,9 @@ class Trainer():
         self.demos = demonstrations
         self.pose_stats = pose_stats
         self.orientation_stats = orientation_stats
-        self.img_stats = img_stats
+        self.iq_stats = iq_stats
+        self.color_stats = color_stats
+        self.depth_stats = depth_stats
         
         self.obs_keys = cfg.obs.obs_keys
         self.obs_horizon = cfg.model.obs_horizon
@@ -79,7 +83,7 @@ class Trainer():
         Gets the dataloader for the training set.
         '''
         diff_dataset = dataset.DiffDataset(self.demos, self.obs_horizon, self.pred_horizon, self.pose_stats, 
-                                self.orientation_stats, self.img_stats)
+                                self.orientation_stats, self.iq_stats, self.color_stats, self.depth_stats)
         return torch.utils.data.DataLoader(diff_dataset, batch_size=self.batch_size, shuffle=True)
 
 

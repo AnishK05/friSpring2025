@@ -10,87 +10,116 @@ import numpy as np
 
 # helper functions
 
-def get_pad_obs(demo, num_times_zero, index, pose_stats, or_stats, img_stats):
+def get_pad_obs(demo, num_times_zero, index, pose_stats, or_stats, iq_stats, color_stats, depth_stats):
   '''
   Returns observation data when padding is needed at the beginning.
   '''
-  temp_image_list = []
+  temp_color_list = []
+  temp_depth_list = []
   temp_agent_pos_list = []
   for x in range(num_times_zero):
     # pads the necessary amount of times
-    img = torch.from_numpy(demo[0]["image"])
-    img = normalize(img, img_stats)
+    color = torch.from_numpy(demo[0]["color"])
+    color = normalize(color, color_stats)
     
-    temp_image_list.append(img)
+    temp_color_list.append(color)
+
+    depth = torch.from_numpy(demo[0]["depth"])
+    depth = normalize(depth, depth_stats)
+    
+    temp_depth_list.append(depth)
 
     temp_pos = torch.from_numpy(demo[0]["position"])
     temp_or = torch.from_numpy(demo[0]["orientation"])
+    temp_iq = torch.from_numpy(demo[0]["iq"])
 
     temp_pos = normalize(temp_pos, pose_stats)
     temp_or = normalize(temp_or, or_stats)
-    temp_agent_pos_list.append(torch.cat((temp_pos, temp_or), dim=1))
+    temp_iq = normalize(temp_iq, iq_stats)
+    temp_agent_pos_list.append(torch.cat((temp_pos, temp_or, temp_iq), dim=1))
 
   idx = 1
 
   while idx < index + 1:
     # remaining observations
-    img = torch.from_numpy(demo[idx]["image"])
-    img = normalize(img, img_stats)
+    color = torch.from_numpy(demo[idx]["color"])
+    color = normalize(color, color_stats)
     
-    temp_image_list.append(img)
+    temp_color_list.append(color)
+
+    depth = torch.from_numpy(demo[idx]["depth"])
+    depth = normalize(depth, depth_stats)
+    
+    temp_color_list.append(depth)
+
     temp_pos = torch.from_numpy(demo[idx]["position"])
     temp_or = torch.from_numpy(demo[idx]["orientation"])
+    temp_iq = torch.from_numpy(demo[idx]["iq"])
 
     temp_pos = normalize(temp_pos, pose_stats)
     temp_or = normalize(temp_or, or_stats)
-    temp_agent_pos_list.append(torch.cat((temp_pos, temp_or), dim=1))
+    temp_iq = normalize(temp_iq, iq_stats)
+    temp_agent_pos_list.append(torch.cat((temp_pos, temp_or, temp_iq), dim=1))
 
     idx += 1
 
   # returns data as torch tensors
-  image_obs = torch.stack(temp_image_list)
+  color_obs = torch.stack(temp_color_list)
+  depth_obs = torch.stack(temp_depth_list)
   transform = transforms.Resize((96, 96),
               interpolation=transforms.InterpolationMode.BILINEAR)
-  image_obs = transform(image_obs)
+  color_obs = transform(color_obs)
+  depth_obs = transform(depth_obs)
   agent_obs = torch.stack(temp_agent_pos_list)
 
 
-  return image_obs, agent_obs
+  return color_obs, depth_obs, agent_obs
 
 
 
-def get_obs(demo, start_idx, index, pose_stats, or_stats, img_stats):
+def get_obs(demo, start_idx, index, pose_stats, or_stats, iq_stats, color_stats, depth_stats):
   '''
   Returns observation data when padding is not needed. 
   '''
-  temp_image_list = []
+  temp_color_list = []
+  temp_depth_list = []
   temp_agent_pos_list = []
 
   idx = start_idx
 
   while idx < index + 1:
-    img = torch.from_numpy(demo[idx]["image"])
-    img = normalize(img, img_stats)
+    color = torch.from_numpy(demo[idx]["color"])
+    color = normalize(color, color_stats)
 
-    temp_image_list.append(img)
+    temp_color_list.append(color)
+    
+    depth = torch.from_numpy(demo[idx]["depth"])
+    depth = normalize(depth, depth_stats)
+
+    temp_depth_list.append(depth)
+
     temp_pos = torch.from_numpy(demo[idx]["position"])
     temp_or = torch.from_numpy(demo[idx]["orientation"])
+    temp_iq = torch.from_numpy(demo[idx]["iq"])
 
     temp_pos = normalize(temp_pos, pose_stats)
     temp_or = normalize(temp_or, or_stats)
-    temp_agent_pos_list.append(torch.cat((temp_pos, temp_or), dim=1))
+    temp_iq = normalize(temp_iq, iq_stats)
+    temp_agent_pos_list.append(torch.cat((temp_pos, temp_or, temp_iq), dim=1))
 
     idx += 1
 
   # returns data as torch tensors  
-  image_obs = torch.stack(temp_image_list)
+  color_obs = torch.stack(temp_color_list)
+  depth_obs = torch.stack(temp_depth_list)
   transform = transforms.Resize((96, 96),
               interpolation=transforms.InterpolationMode.BILINEAR)
-  image_obs = transform(image_obs)
+  color_obs = transform(color_obs)
+  depth_obs = transform(depth_obs)
   agent_obs = torch.stack(temp_agent_pos_list)
 
 
-  return image_obs, agent_obs
+  return color_obs, depth_obs, agent_obs
 
 
 
@@ -159,12 +188,13 @@ def unnormalize(tensor, stats):
 
 
 # Dataset class. Returns data as shown below
-# image : tensor size (batch_size, obs_horizon, 3, 96, 96)
-# agent_pos : tensor size (batch_size, obs_horizon, 7)
+# color : tensor size (batch_size, obs_horizon, 3, 96, 96)
+# depth : tensor size (batch_size, obs_horizon, 1, 96, 96)
+# agent_pos : tensor size (batch_size, obs_horizon, 8)
 # action: tensor size (batch_size, pred_horizon, 7)
 class DiffDataset(Dataset):
   def __init__(self, demonstrations, obs_horizon, pred_horizon, 
-               pose_stats, orientation_stats, img_stats=None):
+               pose_stats, orientation_stats, iq_stats, color_stats=None, depth_stats=None):
     '''
     Initializes dataset.
     '''
@@ -173,11 +203,17 @@ class DiffDataset(Dataset):
     self.pred_horizon = pred_horizon
     self.pose_stats = pose_stats
     self.orientation_stats = orientation_stats
+    self.iq_stats = iq_stats
 
-    if (img_stats == None):
-      self.img_stats = {"min" : 0, "max" : 255}
+    if (color_stats == None):
+      self.color_stats = {"min" : 0, "max" : 255}
     else:
-      self.img_stats = img_stats
+      self.color_stats = color_stats
+
+    if (depth_stats == None):
+      self.depth_stats = {"min" : 0, "max" : 65535}
+    else:
+      self.depth_stats = depth_stats
 
 
     for demo in demonstrations:
@@ -191,22 +227,27 @@ class DiffDataset(Dataset):
         elif (start_idx < 0):
           num_times_zero = abs(start_idx) + 1
 
-        temp_image_list = []
+        temp_color_list = []
+        temp_depth_list = []
         temp_agent_pos_list = []
 
         # getting observations
         if (num_times_zero > 0):
-          image_obs, agent_obs = get_pad_obs(demo,
+          color_obs, depth_obs, agent_obs = get_pad_obs(demo,
                                             num_times_zero, i, 
                                             self.pose_stats, 
                                             self.orientation_stats, 
-                                            self.img_stats)
+                                            self.iq_stats, 
+                                            self.color_stats, 
+                                            self.depth_stats)
         else:
-          image_obs, agent_obs = get_obs(demo, 
+          color_obs, depth_obs, agent_obs = get_obs(demo, 
                                          start_idx, i, 
                                          self.pose_stats, 
                                          self.orientation_stats,
-                                         self.img_stats)
+                                         self.iq_stats,
+                                         self.color_stats,
+                                         self.depth_stats)
           
         # getting actions
         action_pred = get_action(demo, 
@@ -214,7 +255,8 @@ class DiffDataset(Dataset):
                                  self.pose_stats, 
                                  self.orientation_stats)
 
-        temp["image"] = image_obs
+        temp["color"] = color_obs
+        temp["depth"] = depth_obs
         temp["agent_pos"] = agent_obs
         temp["action"] = action_pred
         self.dataset.append(temp)
@@ -233,7 +275,8 @@ class DiffDataset(Dataset):
 
     temp = self.dataset[idx]
 
-    nsample["image"] = (temp["image"])
+    nsample["color"] = (temp["color"])
+    nsample["depth"] = (temp["depth"])
     nsample["agent_pos"] = temp["agent_pos"].squeeze(1).float()
     nsample["action"] = temp["action"].squeeze(1).float()
 
