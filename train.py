@@ -1,6 +1,7 @@
 # file imports
 import dataset
 import model
+from processor import load_hdf5, get_stats
 
 from typing import Tuple, Sequence, Dict, Union, Optional, Callable
 import numpy as np
@@ -17,8 +18,10 @@ from diffusers.optimization import get_scheduler
 
 import os
 import hydra
+from hydra import main
 from pprint import pprint 
 
+import h5py
 
 from helper_functions import get_into_dataloader_format
 
@@ -176,7 +179,7 @@ class Trainer():
 
                 noisy_actions = noise_scheduler.add_noise(
                     action, noise, timesteps)
-                
+
                 noise_pred = nets["noise_pred_net"](noisy_actions, 
                                                     timesteps, global_cond=obs_cond)
                 
@@ -211,6 +214,7 @@ class Trainer():
 @hydra.main(config_path=CONFIG, config_name="config", version_base="1.3.2")
 def main(cfg):
     pprint(cfg)
+    device = cfg['train']['device']
 
     # (dataset_list, pos_stats, or_stats) = get_into_dataloader_format(dataset_file)
 
@@ -229,34 +233,37 @@ def main(cfg):
     # print(dataset_list[0][0]["image"].shape)
     # print(dataset_list[0][0]["position"].shape)
     # print(dataset_list[0][0]["orientation"].shape)
+    demonstrations = load_hdf5("data1.hdf5")
+    pose_stats, orientation_stats, iq_stats, color_stats, depth_stats = get_stats(demonstrations)
 
-    trainer = Trainer(cfg, None, None, None)
-    
-    nets, ema = trainer.get_model()
-    
-    image = torch.zeros((1, obs_horizon, 3, 96, 96))
-    depth_image = torch.zeros((1, obs_horizon, 1, 96, 96))
-    agent_pos = torch.zeros((1, obs_horizon, 1))    # gripper state
-    action = torch.zeros((1, pred_horizon, 8))
-    
-    B = agent_pos.shape[0]
+    trainer = Trainer(cfg, demonstrations, pose_stats, orientation_stats, iq_stats, color_stats, depth_stats)
 
-    image_features = nets["vision_encoder"](image.flatten(end_dim=1))
-    image_features = image_features.reshape(*image.shape[:2],-1)
+    trainer.train()
     
-    depth_features = nets["depth_encoder"](depth_image.flatten(end_dim=1)).reshape(*depth_image.shape[:2],-1)
+    # nets, ema = trainer.get_model()
     
-    obs_features = torch.cat([image_features, depth_features, agent_pos], dim=-1)
-    obs_cond = obs_features.flatten(start_dim=1)
+    # image = torch.zeros((1, obs_horizon, 3, 96, 96))
+    # depth_image = torch.zeros((1, obs_horizon, 1, 96, 96))
+    # agent_pos = torch.zeros((1, obs_horizon, 1)).to(device)    # gripper state
+    # action = torch.zeros((1, pred_horizon, 8)).to(device)
     
-    noisy_actions = torch.randn(action.shape)
-    diffusion_iter = torch.zeros((1,))
+    # B = agent_pos.shape[0]
+
+    # image_features = nets["vision_encoder"](image.to(device).flatten(end_dim=1))
+    # image_features = image_features.reshape(*image.shape[:2],-1)
     
-    noise_pred = nets["noise_pred_net"](noisy_actions, 
-                                        diffusion_iter, global_cond=obs_cond)
+    # depth_features = nets["depth_encoder"](depth_image.to(device).flatten(end_dim=1)).reshape(*depth_image.shape[:2],-1)
     
-    denoised_actions = noise_pred - noise_pred
-    print(denoised_actions.shape, denoised_actions)
+    # obs_features = torch.cat([image_features, depth_features, agent_pos], dim=-1)
+    # obs_cond = obs_features.flatten(start_dim=1)
+    
+    # noisy_actions = torch.randn(action.shape, device=device)
+    # diffusion_iter = torch.zeros((1,)).to(device)
+    
+    # noise_pred = nets["noise_pred_net"](noisy_actions, 
+    #                                     diffusion_iter, global_cond=obs_cond)
+    
+    # denoised_actions = noise_pred - noise_pred
     
 
 if __name__ == "__main__":

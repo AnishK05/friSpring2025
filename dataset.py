@@ -50,7 +50,7 @@ def get_pad_obs(demo, num_times_zero, index, pose_stats, or_stats, iq_stats, col
     depth = torch.from_numpy(demo[idx]["depth"])
     depth = normalize(depth, depth_stats)
     
-    temp_color_list.append(depth)
+    temp_depth_list.append(depth)
 
     temp_pos = torch.from_numpy(demo[idx]["position"])
     temp_or = torch.from_numpy(demo[idx]["orientation"])
@@ -214,7 +214,6 @@ class DiffDataset(Dataset):
       self.depth_stats = {"min" : 0, "max" : 65535}
     else:
       self.depth_stats = depth_stats
-
 
     for demo in demonstrations:
       for i in range(len(demo) - 1):
