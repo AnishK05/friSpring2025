@@ -3,3 +3,4 @@ data (it was too big to upload to github): https://drive.google.com/drive/folder
 
 Current checkpoint.pth:
 Minimum Loss: 7.2556 on epoch 98
+https://drive.google.com/file/d/1nfVWXDjtv7bo0908WzvdzrI9JJHsr1en/view?usp=sharing
