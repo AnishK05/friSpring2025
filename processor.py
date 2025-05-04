@@ -32,19 +32,33 @@ def load_hdf5(path):
                 })
 
             demonstrations.append(demo)
-
+    if len(demonstrations) == 0:
+        print("No demonstrations found")
+    elif len(demonstrations) == 1:
+        print(f"Loaded 1 demonstration from {path}")
+    else:
+        print(f"Loaded {len(demonstrations)} demonstrations from {path}")
     return demonstrations
 
 def get_stats(demonstrations):
-    pos_list, or_list, iq_list = [], [], []
+    pos_min, pos_max = None, None
+    or_min, or_max = None, None
+    iq_min, iq_max = None, None
     color_min, color_max = float("inf"), float("-inf")
     depth_min, depth_max = float("inf"), float("-inf")
 
     for demo in demonstrations:
         for sample in demo:
-            pos_list.append(torch.from_numpy(sample["position"]).squeeze(0))
-            or_list.append(torch.from_numpy(sample["orientation"]).squeeze(0))
-            iq_list.append(torch.from_numpy(sample["iq"]).squeeze(0))
+            pos = torch.from_numpy(sample["position"]).squeeze(0)
+            ori = torch.from_numpy(sample["orientation"]).squeeze(0)
+            iq = torch.from_numpy(sample["iq"]).squeeze(0)
+
+            pos_min = pos if pos_min is None else torch.minimum(pos_min, pos)
+            pos_max = pos if pos_max is None else torch.maximum(pos_max, pos)
+            or_min = ori if or_min is None else torch.minimum(or_min, ori)
+            or_max = ori if or_max is None else torch.maximum(or_max, ori)
+            iq_min = iq if iq_min is None else torch.minimum(iq_min, iq)
+            iq_max = iq if iq_max is None else torch.maximum(iq_max, iq)
 
             color = torch.from_numpy(sample["color"]).float()
             depth = torch.from_numpy(sample["depth"]).float()
@@ -53,16 +67,16 @@ def get_stats(demonstrations):
             color_max = max(color_max, color.max().item())
             depth_min = min(depth_min, depth.min().item())
             depth_max = max(depth_max, depth.max().item())
-
+    print("Successfully loaded stats")
     return { # pose
-            "min": torch.stack(pos_list).min(dim=0).values,
-            "max": torch.stack(pos_list).max(dim=0).values
+            "min": pos_min,
+            "max": pos_max
         }, { # orientation
-            "min": torch.stack(or_list).min(dim=0).values,
-            "max": torch.stack(or_list).max(dim=0).values
+            "min": or_min,
+            "max": or_max
         }, { # iq
-            "min": torch.stack(iq_list).min(dim=0).values,
-            "max": torch.stack(iq_list).max(dim=0).values
+            "min": iq_min,
+            "max": iq_max
         }, { # color
             "min": color_min,
             "max": color_max
