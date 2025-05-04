@@ -25,6 +25,8 @@ import h5py
 
 from helper_functions import get_into_dataloader_format
 
+from tqdm import tqdm
+
 CONFIG = os.path.join(os.getcwd(), 'config')
 
 # Class to handle training model, saves important data
@@ -157,9 +159,12 @@ class Trainer():
 
         epoch_loss = []
 
+        print("Started training loop..")
+
         for epoch in range(self.num_epochs):
             total_loss = 0.0
-            for batch in trainloader:
+            train_iter = tqdm(trainloader, desc=f"Epoch {epoch+1}/{self.num_epochs}", leave=False)
+            for batch in train_iter:
                 image, depth_image, agent_pos, action = [batch[key].to(self.device) for key in self.obs_keys]
                 B = agent_pos.shape[0]
 
@@ -233,7 +238,7 @@ def main(cfg):
     # print(dataset_list[0][0]["image"].shape)
     # print(dataset_list[0][0]["position"].shape)
     # print(dataset_list[0][0]["orientation"].shape)
-    demonstrations = load_hdf5("data1.hdf5")
+    demonstrations = load_hdf5("data.hdf5")
     pose_stats, orientation_stats, iq_stats, color_stats, depth_stats = get_stats(demonstrations)
 
     trainer = Trainer(cfg, demonstrations, pose_stats, orientation_stats, iq_stats, color_stats, depth_stats)
