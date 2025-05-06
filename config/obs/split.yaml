@@ -1,0 +1,7 @@
+name: split
+
+obs_keys:
+  - color
+  - depth
+  - agent_pos
+  - action

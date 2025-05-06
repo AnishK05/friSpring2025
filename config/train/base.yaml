@@ -1,0 +1,8 @@
+defaults:
+  - optim: base
+  - scheduler: base
+
+num_epochs: 500
+batch_size: 8
+device: cuda
+save_file: checkpoint.pth
